@@ -1,0 +1,12 @@
+{
+  "screen_type": "bios_setup",
+  "vendor": "HP",
+  "model": "HP Laptop 15-dy2xxx",
+  "visible_text": "Boot Options",
+  "settings": {
+    "POST HotKey Delay (sec)": "0",
+    "USB Boot": "Enabled",
+    "Secure Boot": "Disabled"
+  },
+  "confidence": 0.92
+}

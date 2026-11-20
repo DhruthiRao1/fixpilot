@@ -1,0 +1,6 @@
+{
+  "screen_type": "secure_boot_confirm",
+  "vendor": "HP",
+  "visible_text": "Operating System Boot Mode Change (021). 9342 + ENTER - to complete the change. ESC - continue without changing",
+  "confidence": 0.97
+}

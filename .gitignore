@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+.ruff_cache/
+.coverage
+dist/
+build/
+*.egg-info/
+evals/results/
+# never commit real user screenshots (they contain serial numbers, emails, UUIDs)
+evals/private/

@@ -1,0 +1,46 @@
+# CI/CD: test -> offline eval gate -> build -> deploy to Cloud Run.
+# A drop in eval scores blocks the deploy.
+substitutions:
+  _REGION: us-central1
+  _SERVICE: fixpilot
+  _REPO: fixpilot
+
+steps:
+  - id: test
+    name: python:3.12-slim
+    entrypoint: bash
+    args: ["-c", "pip install -q '.[dev]' && pytest -q"]
+
+  - id: eval-gate
+    name: python:3.12-slim
+    entrypoint: bash
+    args: ["-c", "pip install -q . && python evals/run_eval.py --gate"]
+    waitFor: [test]
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA", "."]
+    waitFor: [eval-gate]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --service-account=fixpilot-runtime@$PROJECT_ID.iam.gserviceaccount.com
+      - --no-allow-unauthenticated
+      - --set-env-vars=FIXPILOT_LLM_BACKEND=gemini,FIXPILOT_RETRIEVER=vertex_rag,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=${_REGION}
+      - --set-secrets=FIXPILOT_RAG_CORPUS=fixpilot-rag-corpus:latest
+      - --min-instances=0
+      - --max-instances=10
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA

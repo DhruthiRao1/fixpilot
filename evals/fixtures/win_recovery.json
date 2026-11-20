@@ -1,0 +1,12 @@
+{
+  "screen_type": "windows_recovery",
+  "vendor": "HP",
+  "visible_text": "Choose an option. Continue. Use a device. Troubleshoot. Turn off your PC",
+  "options": [
+    "Continue",
+    "Use a device",
+    "Troubleshoot",
+    "Turn off your PC"
+  ],
+  "confidence": 0.96
+}

@@ -1,0 +1,7 @@
+{
+  "screen_type": "boot_menu",
+  "vendor": "Dell",
+  "model": "Latitude 5420",
+  "visible_text": "Boot mode is set to: UEFI. UEFI BOOT: Windows Boot Manager",
+  "confidence": 0.9
+}

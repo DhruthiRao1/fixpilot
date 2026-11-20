@@ -1,0 +1,173 @@
+# Vetted fix procedures. The LLM selects and explains a playbook; it does not invent steps.
+# Each step's `action` must exist in fixpilot/risk.py REGISTRY (enforced by tests).
+#
+# match:
+#   intents:       which user intents this playbook serves
+#   screens:       screen types it can start from (empty = any)
+#   vendors:       optional vendor filter (empty = any)
+
+- id: boot_menu_continue_normally
+  title: Continue to Windows from the boot menu
+  summary: >
+    The boot device menu appears when a startup key (usually Esc/F9 on HP) is pressed or
+    stuck during power-on. Nothing needs to change; select Windows and check the keyboard.
+  match:
+    intents: [start_normally]
+    screens: [boot_menu]
+  steps:
+    - id: select_windows
+      action: select_default_os
+      instruction: >
+        Use the arrow keys to highlight "OS Boot Manager (UEFI) - Windows Boot Manager" and
+        press Enter. Windows should start normally.
+      expected_screen: windows_desktop
+    - id: check_keys
+      action: check_stuck_keys
+      instruction: >
+        If the menu keeps appearing at every start, press Esc, F9 and F10 a few times to
+        make sure none is stuck, and let the keyboard dry fully if it was cleaned.
+
+- id: bios_exit_without_changes
+  title: Leave BIOS Setup without changing anything
+  summary: The user opened BIOS Setup but does not need to change any setting.
+  match:
+    intents: [start_normally]
+    screens: [bios_setup]
+  steps:
+    - id: exit_discard
+      action: navigate_menu
+      instruction: >
+        Press the right arrow until the Exit tab is selected, choose "Exit Discarding
+        Changes" (or "Discard Changes and Exit") and confirm Yes.
+      expected_screen: windows_desktop
+
+- id: recovery_continue_to_windows
+  title: Continue to Windows from the recovery menu
+  summary: Windows Recovery opened; the user just wants to start Windows.
+  match:
+    intents: [start_normally]
+    screens: [windows_recovery]
+  steps:
+    - id: continue
+      action: select_default_os
+      instruction: Click "Continue - Exit and continue to Windows".
+      expected_screen: windows_desktop
+
+- id: hp_usb_boot
+  title: Start an HP laptop from a USB drive
+  summary: >
+    Enable USB boot, disable Secure Boot only if the USB media requires it, and use the
+    one-time boot menu (F9) to pick the USB drive.
+  match:
+    intents: [boot_from_usb]
+    screens: [boot_menu, bios_setup, windows_desktop]
+    vendors: [HP]
+  steps:
+    - id: verify_media
+      action: verify_usb_media
+      instruction: >
+        Make sure the USB was written as a bootable UEFI drive (Rufus with GPT + UEFI, or
+        Microsoft's Media Creation Tool). Copying an ISO file onto the stick does not work.
+    - id: open_bios
+      action: enter_bios
+      instruction: Restart and tap Esc, then press F10 to open BIOS Setup.
+      expected_screen: bios_setup
+    - id: usb_boot_on
+      action: enable_usb_boot
+      instruction: In Boot Options, make sure USB Boot is Enabled.
+      expected_screen: bios_setup
+    - id: secure_boot_off
+      action: disable_secure_boot
+      instruction: >
+        Only if your USB tool is not Secure-Boot signed (many Linux and repair tools):
+        Boot Options -> Secure Boot -> Disabled. Windows installers do not need this.
+      expected_screen: bios_setup
+    - id: save
+      action: save_and_exit
+      instruction: Exit tab -> Save Changes and Exit -> Yes.
+      expected_screen: secure_boot_confirm
+    - id: confirm_code
+      action: confirm_secure_boot_code
+      instruction: >
+        Type the 4-digit code shown on the "Operating System Boot Mode Change" screen
+        exactly as displayed (digits do not echo) and press Enter.
+    - id: pick_usb
+      action: open_boot_menu
+      instruction: >
+        With the USB plugged in, restart, tap Esc, press F9 and choose the USB drive.
+      expected_screen: boot_menu
+
+- id: hp_restore_secure_boot
+  title: Turn Secure Boot back on (HP)
+  summary: Undo earlier BIOS changes so the laptop is back to its factory-secure state.
+  match:
+    intents: [restore_settings]
+    screens: [bios_setup, windows_desktop, windows_recovery, boot_menu]
+    vendors: [HP]
+  steps:
+    - id: reach_bios
+      action: advanced_startup_uefi
+      instruction: >
+        From Windows: Settings -> System -> Recovery -> Advanced startup -> Restart now,
+        then Troubleshoot -> Advanced options -> UEFI Firmware Settings -> Restart.
+        (Skip if you are already in BIOS Setup.)
+      expected_screen: bios_setup
+    - id: secure_boot_on
+      action: enable_secure_boot
+      instruction: Boot Options -> Secure Boot -> Enabled.
+      expected_screen: bios_setup
+    - id: order
+      action: change_boot_order
+      instruction: >
+        Highlight OS Boot Manager under UEFI Boot Order and press F6 until it is at the top.
+      expected_screen: bios_setup
+    - id: save
+      action: save_and_exit
+      instruction: Exit tab -> Save Changes and Exit -> Yes.
+      expected_screen: secure_boot_confirm
+    - id: confirm_code
+      action: confirm_secure_boot_code
+      instruction: Type the 4-digit code shown and press Enter.
+      expected_screen: windows_desktop
+
+- id: confirm_secure_boot_change
+  title: Complete a pending Secure Boot change
+  summary: The HP firmware is asking for a code to confirm a Secure Boot change.
+  match:
+    intents: [boot_from_usb, restore_settings]
+    screens: [secure_boot_confirm]
+  steps:
+    - id: type_code
+      action: confirm_secure_boot_code
+      instruction: >
+        Type the 4-digit code shown on screen exactly (digits do not appear as you type)
+        and press Enter. Press Esc instead only if you did NOT request this change.
+
+- id: bitlocker_recovery_key
+  title: Unlock a drive that is asking for its BitLocker recovery key
+  summary: Retrieve the 48-digit key from the user's account or IT, then enter it.
+  match:
+    intents: [start_normally, fix_error, restore_settings, boot_from_usb]
+    screens: [bitlocker_recovery]
+  steps:
+    - id: get_key
+      action: retrieve_recovery_key
+      instruction: >
+        On another device, sign in at aka.ms/myrecoverykey with the Microsoft account used
+        on this PC (work devices: ask IT or check the company portal). Match the Key ID
+        shown on screen.
+    - id: enter_key
+      action: observe
+      instruction: Type the 48-digit recovery key and press Enter.
+      expected_screen: windows_desktop
+
+- id: reset_requires_human
+  title: Reset or reinstall Windows
+  summary: Data-destructive operation; routed to a human technician.
+  match:
+    intents: [reset_device]
+    screens: []
+  steps:
+    - id: reset
+      action: reset_pc
+      instruction: Reset this PC (handled by a technician after backup is confirmed).

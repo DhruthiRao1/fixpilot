@@ -1,0 +1,12 @@
+{
+  "screen_type": "bios_setup",
+  "vendor": "HP",
+  "model": "HP Laptop 15-dy2xxx",
+  "visible_text": "BIOS Setup Utility Main. Serial Number 5CD1234XYZ. UUID 12345678-90ab-cdef-1234-567890a bcdef",
+  "settings": {
+    "BIOS Revision": "F.33",
+    "Serial Number": "5CD1234XYZ",
+    "UUID": "12345678-90ab-cdef-1234-567890a"
+  },
+  "confidence": 0.93
+}

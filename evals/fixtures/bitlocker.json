@@ -1,0 +1,6 @@
+{
+  "screen_type": "bitlocker_recovery",
+  "vendor": "HP",
+  "visible_text": "BitLocker recovery. Enter the recovery key for this drive. Key ID: 1A2B3C4D",
+  "confidence": 0.94
+}

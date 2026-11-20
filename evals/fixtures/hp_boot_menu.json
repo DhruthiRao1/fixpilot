@@ -1,0 +1,11 @@
+{
+  "screen_type": "boot_menu",
+  "vendor": "HP",
+  "model": "HP Laptop 15-dy2xxx",
+  "visible_text": "Please select boot device. OS Boot Manager (UEFI) - Windows Boot Manager (EVMNV/256GB). Boot From EFI File. Press F10 to BIOS Setup Options, ESC to exit.",
+  "options": [
+    "OS Boot Manager (UEFI) - Windows Boot Manager",
+    "Boot From EFI File"
+  ],
+  "confidence": 0.95
+}
